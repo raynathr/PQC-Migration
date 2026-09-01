@@ -1,0 +1,16 @@
+# Core dependencies -- required.
+# Version floors reflect what this code has actually been tested against
+# (Linux, numpy 2.4.4/scipy 1.17.1/pandas 3.0.2/matplotlib 3.10.8, and
+# separately Windows 11, numpy 2.5.2/scipy 1.18.1/pandas 3.0.5/matplotlib
+# 3.11.1) -- both produced bit-identical results for the same seed, so any
+# version at or above these floors should be safe.
+numpy>=2.4.4
+pandas>=3.0.2
+matplotlib>=3.10.8
+scipy>=1.17.1
+
+# Optional -- only used by main.py to report total RAM and physical/logical
+# core counts in the Computational Environment section. If not installed,
+# main.py still runs; those two fields are reported as "unavailable"
+# instead of raising an error.
+psutil>=7.2.2
