@@ -63,11 +63,15 @@ def main():
     print("Running w_AS sweep...")
     w_as_df = sensitivity.scan_w_as(cfg, C_alg, L_t, w_as_range, cfg.RANDOM_SEED)
 
+    print("Running ECC-P256 cost-model comparison (min-gate vs min-qubit)...")
+    ecc_cost_df = sensitivity.scan_ecc_cost_model(cfg, L_t, cfg.RANDOM_SEED)
+
     mu_g_df.to_csv(OUTPUT_DIR / "sensitivity_mu_g.csv", index=False)
     alpha_df.to_csv(OUTPUT_DIR / "sensitivity_alpha.csv", index=False)
     w_as_df.to_csv(OUTPUT_DIR / "sensitivity_w_as.csv", index=False)
+    ecc_cost_df.to_csv(OUTPUT_DIR / "sensitivity_ecc_cost_model.csv", index=False)
 
-    summary_df = sensitivity.summarize_sensitivity(mu_g_df, alpha_df, w_as_df)
+    summary_df = sensitivity.summarize_sensitivity(mu_g_df, alpha_df, w_as_df, ecc_cost_df)
     summary_df.to_csv(OUTPUT_DIR / "sensitivity_summary.csv", index=False)
     print("\nSensitivity summary (tornado data):")
     print(summary_df.to_string(index=False))
@@ -83,11 +87,12 @@ def main():
     ax.barh(y_pos, deltas, color="steelblue")
     ax.set_yticks(y_pos)
     ax.set_yticklabels([
-        f"{p} [{row.range_min:.2f}, {row.range_max:.2f}]"
+        (f"{p} [{row.range_min:.2f}, {row.range_max:.2f}]"
+         if p != "ECC_cost_model" else "ECC cost model (min-gate vs min-qubit)")
         for p, row in zip(params, summary_df.itertuples())
     ])
-    ax.set_xlabel(r"$\Delta$TCI across swept range")
-    ax.set_title("Sensitivity of TCI to Model Parameters\n(Conservative scenario, RSA-2048 driver)")
+    ax.set_xlabel(r"$\Delta$TCI across swept range / discrete choice")
+    ax.set_title("Sensitivity of TCI to Model Parameters\n(Conservative scenario, RSA-2048 driver except last bar)")
     fig.tight_layout()
     tornado_path = OUTPUT_DIR / "fig_sensitivity_tornado.png"
     fig.savefig(tornado_path, dpi=300)

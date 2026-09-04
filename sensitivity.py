@@ -34,6 +34,28 @@ import simulation
 import scenarios
 
 
+def scan_ecc_cost_model(cfg, L_t, seed) -> pd.DataFrame:
+    """
+    Discrete (not swept) sensitivity check: ECC-P256's quantum cost
+    under the min-gate secp256k1 proxy (this paper's default,
+    C_alg=7.90) versus the min-qubit P-256-specific 2026 estimate
+    (C_alg=38.10*log10(2)=~11.47, Chevignard et al. EUROCRYPT 2026).
+    This is the single sensitivity the paper's own prose already
+    identifies as capable of reversing the ECC-vs-RSA headline finding,
+    so it belongs in the same table as the continuous parameter
+    sweeps, not left as a prose-only caveat.
+    """
+    rows = []
+    for label, C_alg in [("min-gate (paper default)", 7.90),
+                          ("min-qubit (Chevignard 2026)", 38.10 * np.log10(2))]:
+        rng = np.random.default_rng(seed)
+        result = simulation.run_cas_simulation(cfg, C_alg, L_t, rng)
+        rows.append({"cost_model": label, "C_alg": C_alg,
+                      "tci_mean": result["tci"].mean(),
+                      "tci_std": result["tci"].std()})
+    return pd.DataFrame(rows)
+
+
 def _run_tci_for_params(cfg, C_alg, L_t, seed, mu_g=None, sigma_g=None,
                          alpha=None, w_as=None, w_km=None, w_dc=None, w_cai=None,
                          growth_model=None, gamma_k=None, gamma_theta=None):
@@ -203,7 +225,7 @@ def hybrid_overhead_not_implemented():
 
 
 def summarize_sensitivity(mu_g_df: pd.DataFrame, alpha_df: pd.DataFrame,
-                           w_as_df: pd.DataFrame) -> pd.DataFrame:
+                           w_as_df: pd.DataFrame, ecc_cost_df: pd.DataFrame = None) -> pd.DataFrame:
     """
     Build a tornado-style summary table: for each swept parameter,
     report the range tested and the resulting delta in TCI mean
@@ -211,6 +233,12 @@ def summarize_sensitivity(mu_g_df: pd.DataFrame, alpha_df: pd.DataFrame,
     belongs in the paper's Section XIII prose (e.g. "For mu_g in
     [0.3, 0.7]: delta_TCI = ...") -- computed from real sweep output,
     not asserted.
+
+    ecc_cost_df, if provided, adds a fourth, discrete (not swept)
+    entry: the ECC-P256 min-gate-vs-min-qubit cost-model choice
+    (see scan_ecc_cost_model). It is reported the same way as the
+    continuous sweeps -- range/min/max/delta -- even though "range"
+    here means two discrete options rather than an interval.
     """
     rows = []
     for name, df, param_col in [
@@ -225,6 +253,16 @@ def summarize_sensitivity(mu_g_df: pd.DataFrame, alpha_df: pd.DataFrame,
             "range_max": df[param_col].max(),
             "tci_min": df["tci_mean"].min(),
             "tci_max": df["tci_mean"].max(),
+            "delta_tci": delta,
+        })
+    if ecc_cost_df is not None:
+        delta = ecc_cost_df["tci_mean"].max() - ecc_cost_df["tci_mean"].min()
+        rows.append({
+            "parameter": "ECC_cost_model",
+            "range_min": ecc_cost_df["C_alg"].min(),
+            "range_max": ecc_cost_df["C_alg"].max(),
+            "tci_min": ecc_cost_df["tci_mean"].min(),
+            "tci_max": ecc_cost_df["tci_mean"].max(),
             "delta_tci": delta,
         })
     return pd.DataFrame(rows)

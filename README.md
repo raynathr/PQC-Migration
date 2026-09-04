@@ -152,14 +152,16 @@ Produces, under `./output/`:
   tolerance (default 0.01 on the RQR scale) of the N=10,000 reference
   value, for that N and every larger N tested.
 
-**Note on N=1000 vs the converged value:** every headline result in the
-paper (`main.py`, `run_sensitivity.py`) uses N=1000 for exact
-reproducibility and consistency across all reported tables/figures. The
-convergence sweep shows this is within ~0.033 of the fully converged
-(N=5000+) value on the specific tail statistic tracked — good enough to
-support the paper's qualitative conclusions, but if you need tighter
-numerical precision for a specific downstream use, re-run with
-`N_ITERATIONS=5000` in `config.py`.
+**Note on N=1000 vs the converged value:** the convergence sweep shows
+N=1000 sits ~0.033 outside this paper's stated 0.01 tolerance on mean
+RQR at Year 15, which is why `config.py`'s default is `N_ITERATIONS =
+5000`, not 1000. Every headline result in the paper (`main.py`,
+`run_sensitivity.py`) is generated at N=5000 for this reason — running
+either script with the repository's default settings reproduces the
+paper's numbers directly, no manual edit required. If you need tighter
+numerical precision for a specific downstream use, N=10000 was the
+convergence sweep's own reference value; edit `N_ITERATIONS` in
+`config.py` accordingly.
 
 ## Reproducibility
 

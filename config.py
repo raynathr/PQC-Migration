@@ -31,7 +31,12 @@ from typing import Optional
 @dataclass
 class SimulationConfig:
     # --- Monte Carlo controls ---
-    N_ITERATIONS: int = 1000
+    # N=5000 because the convergence sweep (convergence.py, paper Sec.
+    # Convergence) shows N=1000 sits ~0.033 outside the paper's stated
+    # 0.01 tolerance on mean RQR at Year 15; N=5000 is the smallest N
+    # within tolerance and is what every headline number in the paper
+    # (main.py, run_sensitivity.py) is actually generated at.
+    N_ITERATIONS: int = 5000
     T_YEARS: int = 15
     RANDOM_SEED: int = 42
 
