@@ -242,6 +242,70 @@ the annual capability growth rate `g`:
   estimates. The Kyber-512 quantum core-SVP figure in particular is
   disputed in the NIST PQC forum record.
 
+---
+
+## Revision (major-revision response)
+
+The modules below were added in the revision and supersede the original
+pipeline for every headline result. `main.py`, `sensitivity.py`,
+`convergence.py` and `run_realistic_constants.py` are retained unchanged so
+the *previous* draft's numbers remain reproducible for the before/after
+comparisons the paper reports.
+
+| Module | What it adds | Paper section |
+|---|---|---|
+| `calibration.py` | Growth-rate fit plus the scale-degeneracy proof showing `A0` is unidentifiable; normalized (A0-free) coordinates | Eliminating the Absolute Capability Baseline |
+| `costs.py` | Quantum attack cost as a mixture over published resource estimates, with qubit/gate metadata | Attack Cost as a Random Variable |
+| `exposure.py` | Exposure-adjusted organizational RQR; per-asset-class `live` and `hndl` exposure; value-weighted coverage | Coupling Migration to Residual Risk |
+| `metrics.py` | `M_KM` / `M_CAI` as 11 named, measurable, migration-coupled indicators; hybrid-overhead dependency | Operationalizing M_KM and M_CAI |
+| `threshold.py` | `CAS_min` derived from risk appetite and component floors | Trust Continuity Index |
+| `ahp.py` | AHP representability + consistency ratio for the CAS weight vector | Cryptographic Assurance Model |
+| `variance_reduction.py` | Exponentially tilted importance sampler, LHS, naive MC benchmark | Variance Reduction in the Rare-Event Regime |
+| `baselines.py` | Mosca `X+Y>Z`, qualitative readiness, deterministic RQR/CAS comparators | Comparison Against Simpler Baselines |
+| `revised_model.py` | The end-to-end revised pipeline | Monte Carlo Simulation Framework |
+
+### Reproducing the revised results
+
+```bash
+pip install -r requirements.txt
+python calibration.py        # identifiability + growth-rate fit
+python ahp.py                # CAS weight consistency ratio
+python threshold.py          # derived CAS_min table
+python run_revision.py       # calibration, costs, RQR, scenarios, asset classes
+python run_revision2.py      # variance reduction, baselines, decisions, sensitivity
+python make_figures.py       # all five paper figures + revised convergence sweep
+```
+
+`run_revision.py` writes `output/revision_results.json`, which
+`run_revision2.py` extends in place and `make_figures.py` reads. Run them in
+that order. Every number in the revised paper comes from that JSON file or
+from the console output of the three standalone scripts. Seed is 42
+throughout except in the rare-event study, which reports its own seeds
+(11 for the table, 3 for the figure) precisely because the naive estimator
+is seed-dominated there.
+
+### What is still open
+
+Seven of the eleven CAS indicators, the logistic sharpness `alpha`, the
+annual-noise term `sigma_eps`, the cost-mixture weights `pi_e`, the asset
+value weights `v_c` and the migration-coupling coefficients `kappa_i` remain
+assumptions. Every one of them is named and swept in the eleven-parameter
+sensitivity analysis (`run_revision2.py`, step 10), and all are targeted by
+the elicitation instrument in the paper's Appendix E. No expert panel was run
+and none is reported.
+
+Two of them turn out not to matter: `sigma_eps` moves TCI by less than 1e-4
+across a fourfold range, and `log10_A0` by 0.0045 across five orders of
+magnitude. One matters a great deal: `kappa_i`, the migration-coupling
+coefficients, is the second-largest sensitivity in the model (dTCI = 0.081)
+and has no empirical anchor of any kind.
+
+Note on the Kyber figures: naive Monte Carlo does not estimate the Kyber cells
+of the paper's per-algorithm table at all. At a five-year horizon it
+underestimates Kyber-1024's mean RQR by ~3.5e29. Those cells come from
+`variance_reduction.importance_estimate()` (run_revision2.py, step 6b), not
+from `run_revision.py`'s naive sweep.
+
 ## Citation
 
 If you use this code, please cite the paper it accompanies:
